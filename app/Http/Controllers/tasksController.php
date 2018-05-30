@@ -45,11 +45,13 @@ class tasksController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {   $this->validate($request, [
-            'title' => 'required|max:191',
+    {    $this->validate($request, [
+            'title' => 'required|max:191',   // 追加
             'content' => 'required|max:191',
-            
-        $task = new task;
+        ]);
+
+        $task = new Task;
+        $task->title = $request->title;    // 追加
         $task->content = $request->content;
         $task->save();
 
