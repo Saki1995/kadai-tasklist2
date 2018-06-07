@@ -8,6 +8,8 @@ use App\Http\Requests;
 
 use  App\Task;
 
+
+
 class tasksController extends Controller
 {
     /**
@@ -17,12 +19,23 @@ class tasksController extends Controller
      */
     public function index()
     {
-       $tasks = Task::all();
+       
+        $data = [];
+        if (\Auth::check()) {
+            $user = \Auth::user();
+            $tasks = Task::all()->where('user_id',"=" ,$user->id);
 
-        return view('tasks.index', [
-            'tasks' => $tasks,
-        ]);
+            $data = [
+                'user' => $user,
+                'tasks' => $tasks,
+            ];
+           
+            return view('tasks.index', $data);
+        }else {
+            return view('welcome');
+        }
     }
+    
 
     /**
      * Show the form for creating a new resource.
@@ -32,11 +45,16 @@ class tasksController extends Controller
     public function create()
     {
        $task = new task;
-
+       
+        if (\Auth::check())
+    {
+        
+        $task=new Task;
         return view('tasks.create', [
             'task' => $task,
         ]);
     }
+     }
 
     /**
      * Store a newly created resource in storage.
@@ -45,15 +63,19 @@ class tasksController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {    $this->validate($request, [
-            'status' => 'required|max:191',   // 追加
+    {   
+        
+         $this->validate($request, [
             'content' => 'required|max:191',
         ]);
-
-        $task = new Task;
-        $task->status = $request->status;    // 追加
-        $task->content = $request->content;
+        
+        $task= new Task;
+        $task->status= $request -> status;
+        $task->content= $request ->content;
+        $task->user_id= \Auth::user()->id;
         $task->save();
+
+        
 
         return redirect('/');
     }
@@ -66,13 +88,35 @@ class tasksController extends Controller
      */
     public function show($id)
     {
-       $task =Task::find($id);
-
-        return view('tasks.show', [
-            'task' => $task,
-        ]);
-    }
-
+        if (\Auth::check())
+        {
+            $task =Task::find($id);
+            
+            if (\Auth::user()->id === $task->user_id)
+            {    
+                 return view('tasks.show', [
+                 'task' => $task,
+                ]);
+            
+             }
+        
+            else 
+             {
+                     return redirect('/');
+             }
+        }
+            else
+            {
+                return view ('welcome');
+            }
+        
+    }    
+         
+         
+    
+    
+    
+    
     /**
      * Show the form for editing the specified resource.
      *
@@ -81,11 +125,29 @@ class tasksController extends Controller
      */
     public function edit($id)
     {
-       $task = Task::find($id);
+         if (\Auth::check())
+        {
+            $task =Task::find($id);
+            
+            if (\Auth::user()->id === $task->user_id)
+            {    
+                 return view('tasks.edit', [
+                 'task' => $task,
+                ]);
+            
+             }
+        
+            else 
+             {
+                     return redirect('/');
+             }
+        }
+            else
+            {
+                return view ('welcome');
+            }
 
-        return view('tasks.edit', [
-            'task' => $task,
-        ]);
+      
     }
 
     /**
@@ -117,9 +179,14 @@ class tasksController extends Controller
      */
     public function destroy($id)
     {
-      $task = Task::find($id);
-        $task->delete();
+      
+        $task = \App\Task::find($id);
 
-        return redirect('/');
+        if (\Auth::user()->id === $task->user_id) {
+            $task->delete();
+            return redirect('/');
+        }
+
+        
     }
 }
